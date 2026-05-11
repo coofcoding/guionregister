@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Guiones - Edición de Video</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        c_accent: '#EF6824',    
+                        c_muted: '#737373',     
+                        c_border: '#333333',    
+                        c_surface: '#171717',   
+                        c_bg: '#090909'         
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    animation: {
+                        'float-slow': 'float 6s ease-in-out infinite',
+                        'float-fast': 'float 4s ease-in-out infinite reverse',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards'
+                    },
+                    keyframes: {
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-15px) rotate(5deg)' }
+                        },
+                        'fadeIn': {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Efecto de Ruido global con frecuencia 1.5 */
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.05;
+            background: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+
+        /* Objetos 3D simulados */
+        .shape-3d {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.9));
+        }
+        .shape-1 {
+            width: 300px; height: 300px;
+            top: -50px; right: -50px;
+            background: radial-gradient(circle at 30% 30%, #EF6824, #333333, #090909);
+            opacity: 0.12;
+        }
+        .shape-2 {
+            width: 200px; height: 200px;
+            bottom: 5%; left: -50px;
+            background: radial-gradient(circle at 30% 30%, #737373, #171717, #090909);
+            opacity: 0.15;
+        }
+
+        @keyframes gradient-x {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .text-gradient-animated {
+            background: linear-gradient(90deg, #EF6824, #ff9b6a, #EF6824);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: gradient-x 4s linear infinite;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(90deg, #EF6824, #ff8c54, #d1561b, #EF6824);
+            background-size: 300% 100%;
+            color: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            animation: gradient-x 4s linear infinite;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -3px rgba(239, 104, 36, 0.4);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090909; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #EF6824; }
+
+        .view-transition { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .hide-view {
+            opacity: 0; pointer-events: none; position: absolute;
+            transform: scale(0.98); visibility: hidden; height: 0; overflow: hidden;
+        }
+        .show-view {
+            opacity: 1; pointer-events: auto; position: relative;
+            transform: scale(1); visibility: visible; height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-c_bg text-white font-sans h-screen overflow-hidden selection:bg-c_accent selection:text-white relative text-sm">
+
+    <div class="noise-overlay"></div>
+    <div class="shape-3d shape-1 animate-float-slow"></div>
+    <div class="shape-3d shape-2 animate-float-fast"></div>
+
+    <div id="app" class="flex h-full w-full relative z-10 p-5 overflow-hidden max-w-[1400px] mx-auto">
+        
+        <aside id="sidebar" class="w-56 bg-c_surface/90 backdrop-blur-md rounded-xl shadow-2xl p-4 mr-5 flex flex-col hide-view border border-c_border/40 flex-shrink-0">
+            <h2 class="text-lg font-bold mb-5 text-white border-b border-c_border pb-2">Mis Guiones</h2>
+            <button onclick="navigate('create')" class="btn-gradient w-full py-2 rounded-lg font-medium mb-4 shadow-md flex items-center justify-center gap-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Crear Guión
+            </button>
+            <div id="sidebar-list" class="flex-1 overflow-y-auto space-y-1 pr-2">
+                </div>
+            <button onclick="navigate('home')" class="mt-4 text-c_muted hover:text-white text-xs flex items-center gap-2 transition-colors pt-4 border-t border-c_border/50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Volver al Inicio
+            </button>
+        </aside>
+
+        <main class="flex-1 h-full relative flex flex-col overflow-hidden">
+            
+            <section id="view-home" class="view-transition show-view flex flex-col justify-start pt-6 pb-6 w-full overflow-y-auto">
+                <div class="mb-8 flex justify-between items-end shrink-0 pr-4">
+                    <div>
+                        <h1 class="text-4xl font-bold text-white mb-1 tracking-tight">Guiones de <br><span class="text-gradient-animated">Edición de Video</span></h1>
+                        <p class="text-c_muted text-sm mt-1">Gestiona las estructuras narrativas para tu contenido audiovisual.</p>
+                    </div>
+                    <button onclick="navigate('create')" class="btn-gradient px-6 py-3 rounded-xl font-bold text-base shadow-lg flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Nuevo Guión
+                    </button>
+                </div>
+                
+                <div id="home-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 py-2 w-full">
+                    </div>
+            </section>
+
+            <section id="view-create" class="view-transition hide-view flex flex-col bg-c_surface/95 backdrop-blur-md rounded-xl shadow-2xl border border-c_border/40 overflow-hidden h-full">
+                <div class="p-5 border-b border-c_border bg-c_surface">
+                    <h2 class="text-xl font-bold text-white">Arquitectura del Nuevo Guión</h2>
+                </div>
+                <div class="p-5 flex-1 overflow-y-auto space-y-6" id="create-form">
+                    
+                    <div class="space-y-5 max-w-4xl mx-auto w-full">
+                        <div>
+                            <label class="block text-xs font-bold text-c_muted mb-2">Título del Video</label>
+                            <input type="text" id="input-title" class="w-full bg-c_bg border border-c_border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent focus:border-c_accent transition-all" placeholder="Ej: Transiciones avanzadas en Premiere Pro">
+                        </div>
+
+                        <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_accent shadow-inner">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-sm text-white flex items-center">1. HOOK (Gancho) <span class="text-[10px] font-normal text-white bg-c_accent/20 px-1.5 py-0.5 rounded ml-2">0-3 seg</span></h3>
+                                <span id="counter-hook" class="text-[11px] font-medium text-c_muted transition-colors">0/8 pal.</span>
+                            </div>
+                            <p class="text-[11px] text-c_muted mb-2">Interrumpir el patrón instintivo. Combina promesa intelectual con estímulo visual disruptivo.</p>
+                            <textarea id="input-hook" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent resize-none placeholder:text-c_border/70" placeholder="Redacta tu gancho aquí..."></textarea>
+                        </div>
+
+                        <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_muted shadow-inner">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-sm text-white flex items-center">2. CONTEXTO (Puente) <span class="text-[10px] font-normal text-white bg-c_muted/20 px-1.5 py-0.5 rounded ml-2">4-10 seg</span></h3>
+                                <span id="counter-context" class="text-[11px] font-medium text-c_muted transition-colors">0/19 pal.</span>
+                            </div>
+                            <p class="text-[11px] text-c_muted mb-2">Validar la inversión de tiempo. Humaniza el problema para generar empatía.</p>
+                            <textarea id="input-context" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_muted resize-none placeholder:text-c_border/70" placeholder="Redacta el contexto aquí..."></textarea>
+                        </div>
+
+                        <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-white shadow-inner">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-sm text-white flex items-center">3. ENSEÑANZA (Autoridad) <span class="text-[10px] font-medium text-c_bg bg-white/90 px-1.5 py-0.5 rounded ml-2">11-25 seg</span></h3>
+                                <span id="counter-teaching" class="text-[11px] font-medium text-c_muted transition-colors">0/40 pal.</span>
+                            </div>
+                            <p class="text-[11px] text-c_muted mb-2">Demostración de criterio técnico. Explica la lógica detrás de las acciones ('detrás de escena').</p>
+                            <textarea id="input-teaching" rows="3" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white resize-none placeholder:text-c_border/70" placeholder="Redacta la enseñanza técnica aquí..."></textarea>
+                        </div>
+
+                        <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_border shadow-inner">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-sm text-white flex items-center">4. FRAMEWORK / PRÁCTICA <span class="text-[10px] font-normal text-white bg-c_border/40 px-1.5 py-0.5 rounded ml-2">26-45 seg</span></h3>
+                                <span id="counter-framework" class="text-[11px] font-medium text-c_muted transition-colors">0/53 pal.</span>
+                            </div>
+                            <p class="text-[11px] text-c_muted mb-2">Sistema de Recompensa. Pasos claros y accionables que el espectador pueda replicar.</p>
+                            <textarea id="input-framework" rows="3" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_border resize-none placeholder:text-c_border/70" placeholder="Redacta los pasos prácticos aquí..."></textarea>
+                        </div>
+
+                        <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_accent shadow-inner">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-sm text-white flex items-center">5. CTA (Llamado a la Acción) <span class="text-[10px] font-normal text-white bg-c_accent/20 px-1.5 py-0.5 rounded ml-2">46-60 seg</span></h3>
+                                <span id="counter-cta" class="text-[11px] font-medium text-c_muted transition-colors">0/40 pal.</span>
+                            </div>
+                            <p class="text-[11px] text-c_muted mb-2">Cierre directivo sin fricción. Usa palabras clave para iniciar automatizaciones por DM.</p>
+                            <textarea id="input-cta" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent resize-none placeholder:text-c_border/70" placeholder="Redacta el CTA aquí..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-c_border bg-c_surface flex justify-between items-center shrink-0">
+                    <div class="text-xs text-c_muted flex items-center gap-2">
+                        <span>Total: <span id="word-count-val" class="font-bold text-white text-sm">0</span> palabras</span>
+                        <span id="word-warning" class="text-red-500 font-medium bg-red-500/10 px-2 py-1 rounded hidden transition-all">⚠️ Alerta: El guión supera el límite óptimo para 60 segundos</span>
+                    </div>
+                    <button onclick="saveScript()" class="btn-gradient px-8 py-2.5 rounded-lg font-bold shadow-lg flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Registrar Guión
+                    </button>
+                </div>
+            </section>
+
+            <section id="view-read" class="view-transition hide-view flex flex-col bg-c_surface/95 backdrop-blur-md rounded-xl shadow-2xl border border-c_border/40 overflow-hidden h-full">
+                 <div class="p-6 border-b border-c_border bg-c_surface flex justify-between items-center shrink-0">
+                    <div>
+                        <h2 id="read-title" class="text-2xl font-bold text-white tracking-tight"></h2>
+                        <p id="read-date" class="text-xs text-c_muted mt-1 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span></span>
+                        </p>
+                    </div>
+                    <button onclick="deleteCurrentScript()" class="text-red-400 hover:text-white border border-red-500/30 hover:bg-red-500/20 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+                        Eliminar
+                    </button>
+                </div>
+                <div class="p-6 flex-1 overflow-y-auto space-y-6 max-w-4xl mx-auto w-full" id="read-content">
+                    </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="success-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hide-view view-transition">
+        <div class="bg-c_surface rounded-xl shadow-2xl p-6 max-w-sm w-full text-center transform transition-transform scale-95 border border-c_border">
+            <div class="w-12 h-12 bg-c_accent/20 text-c_accent rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">¡Guión Guardado!</h3>
+            <p class="text-c_muted mb-5 text-xs">Tu estructura narrativa se ha registrado exitosamente.</p>
+            <div class="flex gap-2">
+                <button onclick="closeModal(); navigate('home')" class="flex-1 py-2 px-3 rounded-md text-white border border-c_border hover:bg-c_border/50 transition-colors text-sm">Volver</button>
+                <button onclick="viewJustCreatedScript()" class="flex-1 btn-gradient py-2 px-3 rounded-md font-bold shadow-md text-sm">Ver Guión</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO ---
+        let scripts = JSON.parse(localStorage.getItem('video_scripts')) || [];
+        let currentView = 'home';
+        let lastCreatedId = null;
+        let currentReadingId = null;
+
+        const views = {
+            home: document.getElementById('view-home'),
+            create: document.getElementById('view-create'),
+            read: document.getElementById('view-read')
+        };
+        const sidebar = document.getElementById('sidebar');
+        const modal = document.getElementById('success-modal');
+
+        // Configuración de límites por sección
+        const textInputsIds = ['input-hook', 'input-context', 'input-teaching', 'input-framework', 'input-cta'];
+        const wordLimits = {
+            'input-hook': 8,
+            'input-context': 19,
+            'input-teaching': 40,
+            'input-framework': 53,
+            'input-cta': 40
+        };
+        
+        const wordCountVal = document.getElementById('word-count-val');
+        const wordWarning = document.getElementById('word-warning');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHomeGrid();
+            renderSidebarList();
+            
+            textInputsIds.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateWords);
+            });
+        });
+
+        function calculateWords() {
+            let totalWords = 0;
+
+            textInputsIds.forEach(id => {
+                const text = document.getElementById(id).value.trim();
+                const wordCount = text ? text.split(/\s+/).filter(word => word.length > 0).length : 0;
+                totalWords += wordCount;
+                
+                // Actualizar contador individual
+                const suffix = id.split('-')[1];
+                const counterEl = document.getElementById(`counter-${suffix}`);
+                const limit = wordLimits[id];
+                
+                counterEl.textContent = `${wordCount}/${limit} pal.`;
+                
+                if (wordCount > limit) {
+                    counterEl.classList.replace('text-c_muted', 'text-red-500');
+                } else {
+                    counterEl.classList.replace('text-red-500', 'text-c_muted');
+                }
+            });
+            
+            // Actualizar contador total
+            wordCountVal.textContent = totalWords;
+            
+            if (totalWords > 160) {
+                wordCountVal.classList.replace('text-white', 'text-red-500');
+                wordWarning.classList.remove('hidden');
+            } else {
+                wordCountVal.classList.replace('text-red-500', 'text-white');
+                wordWarning.classList.add('hidden');
+            }
+        }
+
+        function navigate(targetView, scriptId = null) {
+            Object.values(views).forEach(el => {
+                el.classList.remove('show-view');
+                el.classList.add('hide-view');
+            });
+
+            views[targetView].classList.remove('hide-view');
+            views[targetView].classList.add('show-view');
+
+            if (targetView === 'home') {
+                sidebar.classList.remove('show-view');
+                sidebar.classList.add('hide-view');
+                renderHomeGrid();
+            } else {
+                sidebar.classList.remove('hide-view');
+                sidebar.classList.add('show-view');
+                renderSidebarList();
+                if(targetView === 'read' && scriptId) loadScriptToRead(scriptId);
+            }
+            currentView = targetView;
+        }
+
+        function saveScript() {
+            const title = document.getElementById('input-title').value.trim() || 'Guión Sin Título';
+            const hook = document.getElementById('input-hook').value;
+            const context = document.getElementById('input-context').value;
+            const teaching = document.getElementById('input-teaching').value;
+            const framework = document.getElementById('input-framework').value;
+            const cta = document.getElementById('input-cta').value;
+
+            const newScript = {
+                id: 'script_' + Date.now(),
+                date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
+                title, hook, context, teaching, framework, cta
+            };
+
+            scripts.unshift(newScript); 
+            localStorage.setItem('video_scripts', JSON.stringify(scripts));
+            
+            document.querySelectorAll('#create-form input, #create-form textarea').forEach(el => el.value = '');
+            calculateWords(); // Reiniciar contadores visualmente
+
+            lastCreatedId = newScript.id;
+            
+            modal.classList.remove('hide-view');
+            modal.classList.add('show-view');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }
+
+        function deleteCurrentScript() {
+            if(confirm("¿Estás seguro de eliminar este guión permanentemente?")) {
+                scripts = scripts.filter(s => s.id !== currentReadingId);
+                localStorage.setItem('video_scripts', JSON.stringify(scripts));
+                navigate('home');
+            }
+        }
+
+        function renderHomeGrid() {
+            const grid = document.getElementById('home-grid');
+            if (scripts.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center p-10 bg-c_surface/50 rounded-xl border border-dashed border-c_border mt-2 w-full">
+                        <svg class="w-12 h-12 text-c_border mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p class="text-c_muted font-medium text-sm">Aún no hay guiones.</p>
+                        <p class="text-xs text-c_muted mt-1">Haz click en "Nuevo Guión" para empezar.</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = scripts.map((s, index) => `
+                <div onclick="navigate('read', '${s.id}')" class="animate-fade-in bg-c_surface border border-c_border rounded-xl p-5 cursor-pointer hover:shadow-2xl hover:border-c_accent hover:-translate-y-1 transition-all group flex flex-col justify-between" style="animation-delay: ${index * 0.04}s">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="bg-c_bg text-c_accent text-[10px] px-2 py-0.5 rounded font-medium border border-c_accent/20">Edición / Motion</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2 group-hover:text-c_accent transition-colors line-clamp-2 leading-tight">${s.title}</h3>
+                        <p class="text-xs text-c_muted line-clamp-2 mb-3">${s.hook || 'Sin gancho redactado...'}</p>
+                    </div>
+                    <div class="border-t border-c_border/60 pt-3 flex justify-between items-center">
+                        <span class="text-[11px] text-c_muted flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${s.date.split(',')[0]}</span>
+                        <div class="w-6 h-6 rounded-full bg-c_bg border border-c_border flex items-center justify-center group-hover:bg-c_accent group-hover:border-c_accent transition-colors text-white">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderSidebarList() {
+            const list = document.getElementById('sidebar-list');
+            list.innerHTML = scripts.map(s => `
+                <div onclick="navigate('read', '${s.id}')" class="p-2.5 rounded-md cursor-pointer transition-colors mb-0.5 ${currentReadingId === s.id && currentView === 'read' ? 'bg-c_bg border-l-2 border-c_accent' : 'hover:bg-c_border/20 text-c_muted hover:text-white'}">
+                    <h4 class="text-xs font-semibold truncate ${currentReadingId === s.id && currentView === 'read' ? 'text-white' : ''}">${s.title}</h4>
+                    <p class="text-[9px] opacity-60 mt-0.5">${s.date.split(',')[0]}</p>
+                </div>
+            `).join('');
+        }
+
+        function loadScriptToRead(id) {
+            currentReadingId = id;
+            const script = scripts.find(s => s.id === id);
+            if(!script) return;
+
+            document.getElementById('read-title').textContent = script.title;
+            document.getElementById('read-date').querySelector('span').textContent = `Creado: ${script.date}`;
+
+            const sections = [
+                { title: '1. HOOK (Gancho)', content: script.hook, colorCls: 'text-c_accent border-c_accent' },
+                { title: '2. CONTEXTO (Puente)', content: script.context, colorCls: 'text-c_muted border-c_muted' },
+                { title: '3. ENSEÑANZA', content: script.teaching, colorCls: 'text-white border-white' },
+                { title: '4. FRAMEWORK', content: script.framework, colorCls: 'text-c_border border-c_border' },
+                { title: '5. CALL TO ACTION', content: script.cta, colorCls: 'text-c_accent border-c_accent' }
+            ];
+
+            document.getElementById('read-content').innerHTML = sections.map((sec, i) => `
+                <div class="animate-fade-in" style="animation-delay: ${i * 0.08}s">
+                    <h3 class="text-xs font-bold ${sec.colorCls.split(' ')[0]} uppercase tracking-wider mb-1.5 border-b border-c_border/50 pb-1">${sec.title}</h3>
+                    <p class="text-white text-sm bg-c_bg/50 p-4 rounded-lg border-l-2 ${sec.colorCls.split(' ')[1]} whitespace-pre-wrap leading-relaxed shadow-inner">${sec.content || '<span class="text-c_muted italic text-xs">Sección vacía...</span>'}</p>
+                </div>
+            `).join('');
+            
+            renderSidebarList();
+        }
+
+        function closeModal() {
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.remove('show-view');
+                modal.classList.add('hide-view');
+            }, 300);
+        }
+
+        function viewJustCreatedScript() {
+            closeModal();
+            navigate('read', lastCreatedId);
+        }
+    </script>
+</body>
+</html>
