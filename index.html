@@ -46,7 +46,6 @@
     </script>
 
     <style>
-        /* Efecto de Ruido global con frecuencia 1.5 */
         .noise-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -56,7 +55,6 @@
             background: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
         }
 
-        /* Objetos 3D simulados */
         .shape-3d {
             position: fixed;
             border-radius: 50%;
@@ -234,15 +232,21 @@
             <section id="view-read" class="view-transition hide-view flex flex-col bg-c_surface/95 backdrop-blur-md rounded-xl shadow-2xl border border-c_border/40 overflow-hidden h-full">
                  <div class="p-6 border-b border-c_border bg-c_surface flex justify-between items-center shrink-0">
                     <div>
-                        <h2 id="read-title" class="text-2xl font-bold text-white tracking-tight"></h2>
+                        <div class="flex items-center gap-3">
+                            <h2 id="read-title" class="text-2xl font-bold text-white tracking-tight"></h2>
+                            <span id="read-status-badge"></span>
+                        </div>
                         <p id="read-date" class="text-xs text-c_muted mt-1 flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             <span></span>
                         </p>
                     </div>
-                    <button onclick="deleteCurrentScript()" class="text-red-400 hover:text-white border border-red-500/30 hover:bg-red-500/20 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
-                        Eliminar
-                    </button>
+                    <div class="flex gap-2">
+                        <button id="btn-toggle-status" onclick="toggleScriptStatus()" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors border"></button>
+                        <button onclick="deleteCurrentScript()" class="text-red-400 hover:text-white border border-red-500/30 hover:bg-red-500/20 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+                            Eliminar
+                        </button>
+                    </div>
                 </div>
                 <div class="p-6 flex-1 overflow-y-auto space-y-6 max-w-4xl mx-auto w-full" id="read-content">
                     </div>
@@ -310,7 +314,6 @@
                 const wordCount = text ? text.split(/\s+/).filter(word => word.length > 0).length : 0;
                 totalWords += wordCount;
                 
-                // Actualizar contador individual
                 const suffix = id.split('-')[1];
                 const counterEl = document.getElementById(`counter-${suffix}`);
                 const limit = wordLimits[id];
@@ -324,7 +327,6 @@
                 }
             });
             
-            // Actualizar contador total
             wordCountVal.textContent = totalWords;
             
             if (totalWords > 160) {
@@ -369,14 +371,15 @@
             const newScript = {
                 id: 'script_' + Date.now(),
                 date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
-                title, hook, context, teaching, framework, cta
+                title, hook, context, teaching, framework, cta,
+                status: 'pending' // Estado por defecto
             };
 
             scripts.unshift(newScript); 
             localStorage.setItem('video_scripts', JSON.stringify(scripts));
             
             document.querySelectorAll('#create-form input, #create-form textarea').forEach(el => el.value = '');
-            calculateWords(); // Reiniciar contadores visualmente
+            calculateWords();
 
             lastCreatedId = newScript.id;
             
@@ -394,6 +397,19 @@
             }
         }
 
+        function toggleScriptStatus() {
+            const scriptIndex = scripts.findIndex(s => s.id === currentReadingId);
+            if (scriptIndex > -1) {
+                const currentStatus = scripts[scriptIndex].status || 'pending';
+                scripts[scriptIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
+                localStorage.setItem('video_scripts', JSON.stringify(scripts));
+                
+                // Recargar vistas para reflejar cambios
+                loadScriptToRead(currentReadingId);
+                renderSidebarList();
+            }
+        }
+
         function renderHomeGrid() {
             const grid = document.getElementById('home-grid');
             if (scripts.length === 0) {
@@ -406,11 +422,18 @@
                 return;
             }
 
-            grid.innerHTML = scripts.map((s, index) => `
+            grid.innerHTML = scripts.map((s, index) => {
+                const status = s.status || 'pending';
+                const statusHtml = status === 'completed' 
+                    ? `<span class="bg-green-500/10 text-green-400 text-[10px] px-2 py-0.5 rounded font-medium border border-green-500/20">Completado</span>`
+                    : `<span class="bg-c_accent/10 text-c_accent text-[10px] px-2 py-0.5 rounded font-medium border border-c_accent/20">Pendiente</span>`;
+
+                return `
                 <div onclick="navigate('read', '${s.id}')" class="animate-fade-in bg-c_surface border border-c_border rounded-xl p-5 cursor-pointer hover:shadow-2xl hover:border-c_accent hover:-translate-y-1 transition-all group flex flex-col justify-between" style="animation-delay: ${index * 0.04}s">
                     <div>
                         <div class="flex justify-between items-start mb-3">
-                            <span class="bg-c_bg text-c_accent text-[10px] px-2 py-0.5 rounded font-medium border border-c_accent/20">Edición / Motion</span>
+                            <span class="bg-c_bg text-c_muted text-[10px] px-2 py-0.5 rounded font-medium border border-c_border">Edición / Motion</span>
+                            ${statusHtml}
                         </div>
                         <h3 class="text-lg font-bold text-white mb-2 group-hover:text-c_accent transition-colors line-clamp-2 leading-tight">${s.title}</h3>
                         <p class="text-xs text-c_muted line-clamp-2 mb-3">${s.hook || 'Sin gancho redactado...'}</p>
@@ -422,17 +445,23 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function renderSidebarList() {
             const list = document.getElementById('sidebar-list');
-            list.innerHTML = scripts.map(s => `
-                <div onclick="navigate('read', '${s.id}')" class="p-2.5 rounded-md cursor-pointer transition-colors mb-0.5 ${currentReadingId === s.id && currentView === 'read' ? 'bg-c_bg border-l-2 border-c_accent' : 'hover:bg-c_border/20 text-c_muted hover:text-white'}">
-                    <h4 class="text-xs font-semibold truncate ${currentReadingId === s.id && currentView === 'read' ? 'text-white' : ''}">${s.title}</h4>
-                    <p class="text-[9px] opacity-60 mt-0.5">${s.date.split(',')[0]}</p>
+            list.innerHTML = scripts.map(s => {
+                const isCompleted = (s.status || 'pending') === 'completed';
+                const dotColor = isCompleted ? 'bg-green-400' : 'bg-c_accent';
+                return `
+                <div onclick="navigate('read', '${s.id}')" class="p-2.5 rounded-md cursor-pointer transition-colors mb-0.5 flex items-center justify-between ${currentReadingId === s.id && currentView === 'read' ? 'bg-c_bg border-l-2 border-c_accent' : 'hover:bg-c_border/20 text-c_muted hover:text-white'}">
+                    <div class="overflow-hidden pr-2">
+                        <h4 class="text-xs font-semibold truncate ${currentReadingId === s.id && currentView === 'read' ? 'text-white' : ''}">${s.title}</h4>
+                        <p class="text-[9px] opacity-60 mt-0.5">${s.date.split(',')[0]}</p>
+                    </div>
+                    <div class="w-1.5 h-1.5 rounded-full ${dotColor} shrink-0 opacity-80"></div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function loadScriptToRead(id) {
@@ -442,6 +471,21 @@
 
             document.getElementById('read-title').textContent = script.title;
             document.getElementById('read-date').querySelector('span').textContent = `Creado: ${script.date}`;
+
+            // Configurar Etiqueta y Botón de Estado
+            const status = script.status || 'pending';
+            const badgeEl = document.getElementById('read-status-badge');
+            const btnToggle = document.getElementById('btn-toggle-status');
+
+            if (status === 'completed') {
+                badgeEl.innerHTML = `<span class="bg-green-500/10 text-green-400 text-[10px] px-2 py-0.5 rounded font-medium border border-green-500/20">Completado</span>`;
+                btnToggle.textContent = 'Volver a Pendiente';
+                btnToggle.className = 'text-c_muted hover:text-white border border-c_border hover:bg-c_border/50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors';
+            } else {
+                badgeEl.innerHTML = `<span class="bg-c_accent/10 text-c_accent text-[10px] px-2 py-0.5 rounded font-medium border border-c_accent/20">Pendiente</span>`;
+                btnToggle.textContent = 'Marcar como Completado';
+                btnToggle.className = 'text-green-400 hover:text-white border border-green-500/30 hover:bg-green-500/20 px-3 py-1.5 rounded-md text-xs font-medium transition-colors';
+            }
 
             const sections = [
                 { title: '1. HOOK (Gancho)', content: script.hook, colorCls: 'text-c_accent border-c_accent' },
