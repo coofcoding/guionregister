@@ -128,7 +128,7 @@
         
         <aside id="sidebar" class="w-56 bg-c_surface/90 backdrop-blur-md rounded-xl shadow-2xl p-4 mr-5 flex flex-col hide-view border border-c_border/40 flex-shrink-0">
             <h2 class="text-lg font-bold mb-5 text-white border-b border-c_border pb-2">Mis Guiones</h2>
-            <button onclick="navigate('create')" class="btn-gradient w-full py-2 rounded-lg font-medium mb-4 shadow-md flex items-center justify-center gap-2 text-sm">
+            <button onclick="startCreatingNew()" class="btn-gradient w-full py-2 rounded-lg font-medium mb-4 shadow-md flex items-center justify-center gap-2 text-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Crear Guión
             </button>
@@ -148,7 +148,7 @@
                         <h1 class="text-4xl font-bold text-white mb-1 tracking-tight">Guiones de <br><span class="text-gradient-animated">Edición de Video</span></h1>
                         <p class="text-c_muted text-sm mt-1">Gestiona las estructuras narrativas para tu contenido audiovisual.</p>
                     </div>
-                    <button onclick="navigate('create')" class="btn-gradient px-6 py-3 rounded-xl font-bold text-base shadow-lg flex items-center gap-2">
+                    <button onclick="startCreatingNew()" class="btn-gradient px-6 py-3 rounded-xl font-bold text-base shadow-lg flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Nuevo Guión
                     </button>
@@ -160,7 +160,7 @@
 
             <section id="view-create" class="view-transition hide-view flex flex-col bg-c_surface/95 backdrop-blur-md rounded-xl shadow-2xl border border-c_border/40 overflow-hidden h-full">
                 <div class="p-5 border-b border-c_border bg-c_surface">
-                    <h2 class="text-xl font-bold text-white">Arquitectura del Nuevo Guión</h2>
+                    <h2 id="create-view-title" class="text-xl font-bold text-white">Arquitectura del Nuevo Guión</h2>
                 </div>
                 <div class="p-5 flex-1 overflow-y-auto space-y-6" id="create-form">
                     
@@ -224,7 +224,7 @@
                     </div>
                     <button onclick="saveScript()" class="btn-gradient px-8 py-2.5 rounded-lg font-bold shadow-lg flex items-center gap-2 text-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        Registrar Guión
+                        <span id="btn-save-text">Registrar Guión</span>
                     </button>
                 </div>
             </section>
@@ -241,14 +241,23 @@
                             <span></span>
                         </p>
                     </div>
-                    <div class="flex gap-2">
-                        <button id="btn-toggle-status" onclick="toggleScriptStatus()" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors border"></button>
-                        <button onclick="deleteCurrentScript()" class="text-red-400 hover:text-white border border-red-500/30 hover:bg-red-500/20 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
-                            Eliminar
+                    <div class="flex gap-2 items-center">
+                        <button id="btn-toggle-status" onclick="toggleScriptStatus()" class="px-4 py-2 rounded-md text-xs font-bold transition-colors shadow-md text-white">
+                            Procesando...
+                        </button>
+                        
+                        <div class="w-px h-6 bg-c_border mx-1"></div> <button onclick="editCurrentScript()" class="text-c_muted hover:text-white border border-c_border hover:bg-c_border/50 px-4 py-2 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            Editar
+                        </button>
+                        
+                        <button onclick="deleteCurrentScript()" class="text-red-400 hover:text-white border border-red-500/30 hover:bg-red-500/20 px-3 py-2 rounded-md text-xs font-bold transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
                 </div>
-                <div class="p-6 flex-1 overflow-y-auto space-y-6 max-w-4xl mx-auto w-full" id="read-content">
+                
+                <div class="p-8 flex-1 overflow-y-auto w-full" id="read-content">
                     </div>
             </section>
 
@@ -260,11 +269,11 @@
             <div class="w-12 h-12 bg-c_accent/20 text-c_accent rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             </div>
-            <h3 class="text-xl font-bold text-white mb-2">¡Guión Guardado!</h3>
-            <p class="text-c_muted mb-5 text-xs">Tu estructura narrativa se ha registrado exitosamente.</p>
+            <h3 id="modal-title" class="text-xl font-bold text-white mb-2">¡Guión Guardado!</h3>
+            <p id="modal-desc" class="text-c_muted mb-5 text-xs">Tu estructura narrativa se ha registrado exitosamente.</p>
             <div class="flex gap-2">
-                <button onclick="closeModal(); navigate('home')" class="flex-1 py-2 px-3 rounded-md text-white border border-c_border hover:bg-c_border/50 transition-colors text-sm">Volver</button>
-                <button onclick="viewJustCreatedScript()" class="flex-1 btn-gradient py-2 px-3 rounded-md font-bold shadow-md text-sm">Ver Guión</button>
+                <button onclick="closeModal(); navigate('home')" class="flex-1 py-2 px-3 rounded-md text-white border border-c_border hover:bg-c_border/50 transition-colors text-sm">Volver al Inicio</button>
+                <button onclick="viewJustCreatedScript()" class="flex-1 btn-gradient py-2 px-3 rounded-md font-bold shadow-md text-sm">Ver Documento</button>
             </div>
         </div>
     </div>
@@ -275,6 +284,7 @@
         let currentView = 'home';
         let lastCreatedId = null;
         let currentReadingId = null;
+        let editingId = null;
 
         const views = {
             home: document.getElementById('view-home'),
@@ -284,7 +294,6 @@
         const sidebar = document.getElementById('sidebar');
         const modal = document.getElementById('success-modal');
 
-        // Configuración de límites por sección
         const textInputsIds = ['input-hook', 'input-context', 'input-teaching', 'input-framework', 'input-cta'];
         const wordLimits = {
             'input-hook': 8,
@@ -360,6 +369,35 @@
             currentView = targetView;
         }
 
+        function startCreatingNew() {
+            editingId = null;
+            document.getElementById('create-view-title').textContent = 'Arquitectura del Nuevo Guión';
+            document.getElementById('btn-save-text').textContent = 'Registrar Guión';
+            document.querySelectorAll('#create-form input, #create-form textarea').forEach(el => el.value = '');
+            calculateWords();
+            navigate('create');
+        }
+
+        function editCurrentScript() {
+            const script = scripts.find(s => s.id === currentReadingId);
+            if(!script) return;
+            
+            editingId = script.id;
+            
+            document.getElementById('input-title').value = script.title || '';
+            document.getElementById('input-hook').value = script.hook || '';
+            document.getElementById('input-context').value = script.context || '';
+            document.getElementById('input-teaching').value = script.teaching || '';
+            document.getElementById('input-framework').value = script.framework || '';
+            document.getElementById('input-cta').value = script.cta || '';
+            
+            document.getElementById('create-view-title').textContent = 'Editar Guión';
+            document.getElementById('btn-save-text').textContent = 'Actualizar Guión';
+            
+            calculateWords();
+            navigate('create');
+        }
+
         function saveScript() {
             const title = document.getElementById('input-title').value.trim() || 'Guión Sin Título';
             const hook = document.getElementById('input-hook').value;
@@ -368,20 +406,33 @@
             const framework = document.getElementById('input-framework').value;
             const cta = document.getElementById('input-cta').value;
 
-            const newScript = {
-                id: 'script_' + Date.now(),
-                date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
-                title, hook, context, teaching, framework, cta,
-                status: 'pending' // Estado por defecto
-            };
+            if (editingId) {
+                const index = scripts.findIndex(s => s.id === editingId);
+                if (index !== -1) {
+                    scripts[index] = { 
+                        ...scripts[index], 
+                        title, hook, context, teaching, framework, cta 
+                    };
+                }
+                lastCreatedId = editingId;
+                
+                document.getElementById('modal-title').textContent = '¡Guión Actualizado!';
+                document.getElementById('modal-desc').textContent = 'Los cambios se han guardado en el documento.';
+            } else {
+                const newScript = {
+                    id: 'script_' + Date.now(),
+                    date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
+                    title, hook, context, teaching, framework, cta,
+                    status: 'pending'
+                };
+                scripts.unshift(newScript); 
+                lastCreatedId = newScript.id;
+                
+                document.getElementById('modal-title').textContent = '¡Guión Guardado!';
+                document.getElementById('modal-desc').textContent = 'Tu estructura narrativa se ha registrado exitosamente.';
+            }
 
-            scripts.unshift(newScript); 
             localStorage.setItem('video_scripts', JSON.stringify(scripts));
-            
-            document.querySelectorAll('#create-form input, #create-form textarea').forEach(el => el.value = '');
-            calculateWords();
-
-            lastCreatedId = newScript.id;
             
             modal.classList.remove('hide-view');
             modal.classList.add('show-view');
@@ -404,8 +455,8 @@
                 scripts[scriptIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
                 localStorage.setItem('video_scripts', JSON.stringify(scripts));
                 
-                // Recargar vistas para reflejar cambios
                 loadScriptToRead(currentReadingId);
+                renderHomeGrid();
                 renderSidebarList();
             }
         }
@@ -472,7 +523,6 @@
             document.getElementById('read-title').textContent = script.title;
             document.getElementById('read-date').querySelector('span').textContent = `Creado: ${script.date}`;
 
-            // Configurar Etiqueta y Botón de Estado
             const status = script.status || 'pending';
             const badgeEl = document.getElementById('read-status-badge');
             const btnToggle = document.getElementById('btn-toggle-status');
@@ -480,27 +530,36 @@
             if (status === 'completed') {
                 badgeEl.innerHTML = `<span class="bg-green-500/10 text-green-400 text-[10px] px-2 py-0.5 rounded font-medium border border-green-500/20">Completado</span>`;
                 btnToggle.textContent = 'Volver a Pendiente';
-                btnToggle.className = 'text-c_muted hover:text-white border border-c_border hover:bg-c_border/50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors';
+                btnToggle.className = 'px-4 py-2 rounded-md text-xs font-bold transition-colors shadow-md text-white bg-c_border hover:bg-c_muted';
             } else {
                 badgeEl.innerHTML = `<span class="bg-c_accent/10 text-c_accent text-[10px] px-2 py-0.5 rounded font-medium border border-c_accent/20">Pendiente</span>`;
-                btnToggle.textContent = 'Marcar como Completado';
-                btnToggle.className = 'text-green-400 hover:text-white border border-green-500/30 hover:bg-green-500/20 px-3 py-1.5 rounded-md text-xs font-medium transition-colors';
+                btnToggle.textContent = '✓ Marcar Completado';
+                btnToggle.className = 'px-4 py-2 rounded-md text-xs font-bold transition-colors shadow-md text-white bg-green-600 hover:bg-green-500';
             }
 
+            // NUEVO DISEÑO: TÍTULOS SIN NÚMEROS Y MÁS GRANDES, PÁRRAFOS CON SANGRÍA REDUCIDA
             const sections = [
-                { title: '1. HOOK (Gancho)', content: script.hook, colorCls: 'text-c_accent border-c_accent' },
-                { title: '2. CONTEXTO (Puente)', content: script.context, colorCls: 'text-c_muted border-c_muted' },
-                { title: '3. ENSEÑANZA', content: script.teaching, colorCls: 'text-white border-white' },
-                { title: '4. FRAMEWORK', content: script.framework, colorCls: 'text-c_border border-c_border' },
-                { title: '5. CALL TO ACTION', content: script.cta, colorCls: 'text-c_accent border-c_accent' }
+                { title: 'Hook (Gancho)', content: script.hook, colorCls: 'text-c_accent' },
+                { title: 'Contexto (Puente)', content: script.context, colorCls: 'text-[#a3a3a3]' }, 
+                { title: 'Enseñanza', content: script.teaching, colorCls: 'text-white' },
+                { title: 'Framework / Práctica', content: script.framework, colorCls: 'text-[#d4d4d4]' }, 
+                { title: 'Call To Action', content: script.cta, colorCls: 'text-c_accent' }
             ];
 
-            document.getElementById('read-content').innerHTML = sections.map((sec, i) => `
-                <div class="animate-fade-in" style="animation-delay: ${i * 0.08}s">
-                    <h3 class="text-xs font-bold ${sec.colorCls.split(' ')[0]} uppercase tracking-wider mb-1.5 border-b border-c_border/50 pb-1">${sec.title}</h3>
-                    <p class="text-white text-sm bg-c_bg/50 p-4 rounded-lg border-l-2 ${sec.colorCls.split(' ')[1]} whitespace-pre-wrap leading-relaxed shadow-inner">${sec.content || '<span class="text-c_muted italic text-xs">Sección vacía...</span>'}</p>
-                </div>
-            `).join('');
+            document.getElementById('read-content').innerHTML = `
+                <article class="max-w-3xl mx-auto py-2 font-sans">
+                    ${sections.map((sec, i) => `
+                        <div class="animate-fade-in mb-6" style="animation-delay: ${i * 0.06}s">
+                            <h3 class="text-xl font-bold ${sec.colorCls} uppercase tracking-wider mb-2 select-none">
+                                ${sec.title}
+                            </h3>
+                            <p class="text-gray-300 text-[13px] leading-relaxed opacity-95 text-justify ml-2">
+                                ${sec.content || '<span class="text-c_muted italic text-xs">Sección vacía... edita el guión para añadir contenido.</span>'}
+                            </p>
+                        </div>
+                    `).join('')}
+                </article>
+            `;
             
             renderSidebarList();
         }
