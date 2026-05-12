@@ -176,7 +176,7 @@
                                 <span id="counter-hook" class="text-[11px] font-medium text-c_muted transition-colors">0/8 pal.</span>
                             </div>
                             <p class="text-[11px] text-c_muted mb-2">Interrumpir el patrón instintivo. Combina promesa intelectual con estímulo visual disruptivo.</p>
-                            <textarea id="input-hook" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent resize-none placeholder:text-c_border/70" placeholder="Redacta tu gancho aquí..."></textarea>
+                            <textarea id="input-hook" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent resize-none overflow-hidden placeholder:text-c_border/70" placeholder="Redacta tu gancho aquí..."></textarea>
                         </div>
 
                         <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_muted shadow-inner">
@@ -185,7 +185,7 @@
                                 <span id="counter-context" class="text-[11px] font-medium text-c_muted transition-colors">0/19 pal.</span>
                             </div>
                             <p class="text-[11px] text-c_muted mb-2">Validar la inversión de tiempo. Humaniza el problema para generar empatía.</p>
-                            <textarea id="input-context" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_muted resize-none placeholder:text-c_border/70" placeholder="Redacta el contexto aquí..."></textarea>
+                            <textarea id="input-context" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_muted resize-none overflow-hidden placeholder:text-c_border/70" placeholder="Redacta el contexto aquí..."></textarea>
                         </div>
 
                         <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-white shadow-inner">
@@ -194,7 +194,7 @@
                                 <span id="counter-teaching" class="text-[11px] font-medium text-c_muted transition-colors">0/40 pal.</span>
                             </div>
                             <p class="text-[11px] text-c_muted mb-2">Demostración de criterio técnico. Explica la lógica detrás de las acciones ('detrás de escena').</p>
-                            <textarea id="input-teaching" rows="3" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white resize-none placeholder:text-c_border/70" placeholder="Redacta la enseñanza técnica aquí..."></textarea>
+                            <textarea id="input-teaching" rows="3" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white resize-none overflow-hidden placeholder:text-c_border/70" placeholder="Redacta la enseñanza técnica aquí..."></textarea>
                         </div>
 
                         <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_border shadow-inner">
@@ -203,7 +203,7 @@
                                 <span id="counter-framework" class="text-[11px] font-medium text-c_muted transition-colors">0/53 pal.</span>
                             </div>
                             <p class="text-[11px] text-c_muted mb-2">Sistema de Recompensa. Pasos claros y accionables que el espectador pueda replicar.</p>
-                            <textarea id="input-framework" rows="3" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_border resize-none placeholder:text-c_border/70" placeholder="Redacta los pasos prácticos aquí..."></textarea>
+                            <textarea id="input-framework" rows="3" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_border resize-none overflow-hidden placeholder:text-c_border/70" placeholder="Redacta los pasos prácticos aquí..."></textarea>
                         </div>
 
                         <div class="bg-c_bg/40 p-4 rounded-xl border-l-4 border-c_accent shadow-inner">
@@ -212,7 +212,7 @@
                                 <span id="counter-cta" class="text-[11px] font-medium text-c_muted transition-colors">0/40 pal.</span>
                             </div>
                             <p class="text-[11px] text-c_muted mb-2">Cierre directivo sin fricción. Usa palabras clave para iniciar automatizaciones por DM.</p>
-                            <textarea id="input-cta" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent resize-none placeholder:text-c_border/70" placeholder="Redacta el CTA aquí..."></textarea>
+                            <textarea id="input-cta" rows="2" class="w-full bg-c_surface border border-c_border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-c_accent resize-none overflow-hidden placeholder:text-c_border/70" placeholder="Redacta el CTA aquí..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -306,12 +306,23 @@
         const wordCountVal = document.getElementById('word-count-val');
         const wordWarning = document.getElementById('word-warning');
 
+        // Función mágica para el textarea auto-ajustable
+        function autoResize(textarea) {
+            textarea.style.height = 'auto'; // Reinicia la altura para poder calcular bien
+            textarea.style.height = textarea.scrollHeight + 'px'; // Ajusta al tamaño del texto real
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             renderHomeGrid();
             renderSidebarList();
             
+            // Actualización del Event Listener para incluir autoResize
             textInputsIds.forEach(id => {
-                document.getElementById(id).addEventListener('input', calculateWords);
+                const el = document.getElementById(id);
+                el.addEventListener('input', function() {
+                    calculateWords();
+                    autoResize(this);
+                });
             });
         });
 
@@ -373,7 +384,13 @@
             editingId = null;
             document.getElementById('create-view-title').textContent = 'Arquitectura del Nuevo Guión';
             document.getElementById('btn-save-text').textContent = 'Registrar Guión';
-            document.querySelectorAll('#create-form input, #create-form textarea').forEach(el => el.value = '');
+            
+            // Limpiar campos y resetear las alturas
+            document.querySelectorAll('#create-form input, #create-form textarea').forEach(el => {
+                el.value = '';
+                if(el.tagName === 'TEXTAREA') el.style.height = 'auto'; 
+            });
+            
             calculateWords();
             navigate('create');
         }
@@ -394,6 +411,11 @@
             document.getElementById('create-view-title').textContent = 'Editar Guión';
             document.getElementById('btn-save-text').textContent = 'Actualizar Guión';
             
+            // Recalcular alturas con el texto ya cargado
+            setTimeout(() => {
+                textInputsIds.forEach(id => autoResize(document.getElementById(id)));
+            }, 10);
+
             calculateWords();
             navigate('create');
         }
@@ -537,7 +559,6 @@
                 btnToggle.className = 'px-4 py-2 rounded-md text-xs font-bold transition-colors shadow-md text-white bg-green-600 hover:bg-green-500';
             }
 
-            // NUEVO DISEÑO: TÍTULOS SIN NÚMEROS Y MÁS GRANDES, PÁRRAFOS CON SANGRÍA REDUCIDA
             const sections = [
                 { title: 'Hook (Gancho)', content: script.hook, colorCls: 'text-c_accent' },
                 { title: 'Contexto (Puente)', content: script.context, colorCls: 'text-[#a3a3a3]' }, 
